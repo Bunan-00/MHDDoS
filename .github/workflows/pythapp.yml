@@ -5,12 +5,11 @@ on:
 
 jobs:
   run-client:
-    name: Run client (matrix: ${{ matrix.job }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # chạy 20 client song song
         job: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,7 +17,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.x"
 
       - name: Install dependencies from requirements.txt
         run: |
@@ -26,5 +25,5 @@ jobs:
 
       - name: Run client.py with timeout 355 minutes
         run: |
-          echo "Starting client (matrix job index: ${{ matrix.job }})"
+          echo "Starting client ${{ matrix.job }}"
           timeout 355m python3 client.py
